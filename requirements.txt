@@ -1,0 +1,6 @@
+requests
+cbpro
+python-dotenv
+pandas
+robin-stocks
+pyotp
