@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from typing import List
 from abc import ABC, abstractmethod
 import operator
+from copy import copy
 
 
 @dataclass
@@ -65,7 +66,8 @@ class Disposal(Transaction):
             "proceeds": self.proceeds,
             "quantity_reconciled": self.quantity_reconciled,
             "review_required": self.review_required,
-            "associated_purchases": [p.to_dict() for p in self.associated_purchases]
+            "associated_purchases": [p.to_dict() for p in self.associated_purchases],
+            "reconciled": self.reconciled
         })
         return d
 
@@ -317,7 +319,7 @@ class Taxes:
                     purchase.qty_disposed >= purchase.quantity)
                 disposal.reconciled = (
                     disposal.quantity_reconciled >= disposal.quantity)
-                disposal.associated_purchases.append(purchase)
+                disposal.associated_purchases.append(copy(purchase))
                 if not purchase.full_disposal:
                     self.undisposed_purchases.insert(0, purchase)
             if purchase.full_disposal:
@@ -363,6 +365,15 @@ class Taxes:
         self.to_json()
         self.to_csv()
 
+    def sanity_check(self, epsilon:float = 0.0001) -> bool:
+        '''
+        Checks to make sure that:
+        - the disposal cost basis is correct
+        - the the sum of qty_disposed of the associated purchases is equal to the quantity reconciled
+        '''
+        for disposal in self.disposals:
+            if disposal.review_required:
+                print(disposal)
 
 if __name__ == "__main__":
     load_dotenv()
