@@ -365,15 +365,6 @@ class Taxes:
         self.to_json()
         self.to_csv()
 
-    def sanity_check(self, epsilon:float = 0.0001) -> bool:
-        '''
-        Checks to make sure that:
-        - the disposal cost basis is correct
-        - the the sum of qty_disposed of the associated purchases is equal to the quantity reconciled
-        '''
-        for disposal in self.disposals:
-            if disposal.review_required:
-                print(disposal)
 
 if __name__ == "__main__":
     load_dotenv()
