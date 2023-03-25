@@ -24,6 +24,8 @@ class Transaction:
     txn_id: str
     exchange: str
     cost_basis: float = 0.0
+    price: float = 0.0
+    fee: float = 0.0
 
     def to_dict(self):
         return {
@@ -31,8 +33,10 @@ class Transaction:
             "exchange": self.exchange,
             "quantity": self.quantity,
             "cost_basis": self.cost_basis,
+            "price": self.price,
             "date": str(self.date),
-            "txn_id": self.txn_id
+            "txn_id": self.txn_id,
+            "fee": self.fee
         }
 
 
@@ -45,7 +49,8 @@ class Purchase(Transaction):
         d = super().to_dict()
         d.update({
             "qty_disposed": self.qty_disposed,
-            "full_disposal": self.full_disposal
+            "full_disposal": self.full_disposal,
+            "side": "buy"
         })
         return d
 
@@ -67,7 +72,8 @@ class Disposal(Transaction):
             "quantity_reconciled": self.quantity_reconciled,
             "review_required": self.review_required,
             "associated_purchases": [p.to_dict() for p in self.associated_purchases],
-            "reconciled": self.reconciled
+            "reconciled": self.reconciled,
+            "side": "sell"
         })
         return d
 
@@ -126,7 +132,9 @@ class ExchangeTaxInfo:
                 date=date,
                 txn_id=txid,
                 exchange=exchange,
-                cost_basis=price * quantity + fee
+                cost_basis=price * quantity + fee,
+                price=price,
+                fee=fee
             )
         elif side == "sell":
             return Disposal(
@@ -136,7 +144,8 @@ class ExchangeTaxInfo:
                 txn_id=txid,
                 exchange=exchange,
                 price=price,
-                proceeds=price * quantity - fee
+                proceeds=price * quantity - fee,
+                fee=fee
             )
 
     def raw_txns_to_dataclass(self, txns: List[dict]) -> List[Transaction]:
@@ -252,6 +261,26 @@ class StrikeTaxInfo(ExchangeTaxInfo):
                 self.txns.append(txn)
 
 
+class JsonTaxInfo(ExchangeTaxInfo):
+    def __init__(self, json_filename: str):
+        self.json_filename = json_filename
+        key_mapping = {
+            "utc_time": "utc_time",
+            "symbol": "symbol",
+            "side": "side",
+            "price": "price",
+            "quantity": "quantity",
+            "txn_id": "txn_id",
+            "fee": "fee"
+        }
+        super().__init__("Json", key_mapping)
+
+    def get_txns(self) -> List[Transaction]:
+        with open(self.json_filename) as f:
+            self.txns = json.load(f)
+        return self.txns
+
+
 class Encoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, (Purchase, Disposal)):
@@ -307,13 +336,13 @@ class Taxes:
                     purchase.qty_disposed += disposal.quantity - disposal.quantity_reconciled
                     disposal.cost_basis += purchase.cost_basis * \
                         (disposal.quantity - disposal.quantity_reconciled) / \
-                        disposal.quantity
+                        purchase.quantity
                     disposal.quantity_reconciled = disposal.quantity
                 else:
                     disposal.quantity_reconciled += purchase.quantity - purchase.qty_disposed
                     disposal.cost_basis += purchase.cost_basis * \
                         (purchase.quantity - purchase.qty_disposed) / \
-                        disposal.quantity
+                        purchase.quantity
                     purchase.qty_disposed += purchase.quantity - purchase.qty_disposed
                 purchase.full_disposal = (
                     purchase.qty_disposed >= purchase.quantity)
@@ -378,6 +407,9 @@ if __name__ == "__main__":
     RH_TOTP_B32 = os.getenv("RH_TOTP_B32")
 
     totp = pyotp.TOTP(RH_TOTP_B32).now()
+
+    # JTI = JsonTaxInfo("data/test_json_txns.json")
+    # pprint(JTI.txns)
 
     RH = RobinhoodTaxInfo(RH_USERNAME, RH_PASSWORD, totp)
     STRIKE = StrikeTaxInfo("data/strike_annual_transactions_2022.csv")
