@@ -106,12 +106,12 @@ Builds and runs the application in a docker container, keeping a volume at ./dat
         "cost_basis": 203.9775249987512,
         "price": 20000.00,
         "date": "2022-08-10T03:04:41.396405",
-        "txn_id": "04a685de-5a23-45f3-888c-509e65ec3720",
+        "txn_id": "abcd1234-abcd-1234-1234-123456789abc",
         "fee": 3.9775249987512,
         "qty_disposed": 0.004656190000000001,
         "full_disposal": false,
         "side": "buy"
-    }, ...
+    }, 
 ]
 
 ```
@@ -135,7 +135,7 @@ Builds and runs the application in a docker container, keeping a volume at ./dat
         "qty_disposed": 0.00032793,
         "full_disposal": true,
         "side": "buy"
-    }, ...
+    }, 
 ]
 ```
 
@@ -181,7 +181,7 @@ Builds and runs the application in a docker container, keeping a volume at ./dat
         "side": "buy",
         "price": 20000.00,
         "quantity": 0.0165000,
-        "txn_id": "5c8a9c2d-3b7f-4a3d-8c2d-3b7f4a3d8c2d",
+        "txn_id": "abcd1234-abcd-1234-1234-123456789abc",
         "fee": 0.00
     },
     {
@@ -190,7 +190,7 @@ Builds and runs the application in a docker container, keeping a volume at ./dat
         "side": "buy",
         "price": 18000.00,
         "quantity": 1.5000000,
-        "txn_id": "6d8b9d3e-4c8e-5b4e-9d3e-4c8e5b4e9d3e",
+        "txn_id": "abcd1234-abcd-1234-1234-123456789abc",
         "fee": 1.50
     },
     {
@@ -199,8 +199,8 @@ Builds and runs the application in a docker container, keeping a volume at ./dat
         "side": "sell",
         "price": 21000.00,
         "quantity": 0.0080000,
-        "txn_id": "7e9c0f4f-5d9f-6c5f-0f4f-5d9f6c5f0f4f",
+        "txn_id": "abcd1234-abcd-1234-1234-123456789abc",
         "fee": 0.01
     }
 ]
-    ```
+```
