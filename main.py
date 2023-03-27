@@ -15,6 +15,8 @@ from abc import ABC, abstractmethod
 import operator
 from copy import copy
 
+COMMON_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
+
 
 @dataclass
 class Transaction:
@@ -34,7 +36,7 @@ class Transaction:
             "quantity": self.quantity,
             "cost_basis": self.cost_basis,
             "price": self.price,
-            "date": str(self.date),
+            "date": self.date.strftime(COMMON_TIME_FORMAT),
             "txn_id": self.txn_id,
             "fee": self.fee
         }
@@ -53,6 +55,21 @@ class Purchase(Transaction):
             "side": "buy"
         })
         return d
+
+    @classmethod
+    def from_dict(cls, d: dict):
+        return cls(
+            symbol=d["symbol"],
+            quantity=d["quantity"],
+            date=dt.datetime.strptime(d["date"], COMMON_TIME_FORMAT),
+            txn_id=d["txn_id"],
+            exchange=d["exchange"],
+            cost_basis=d["cost_basis"],
+            price=d["price"],
+            fee=d["fee"],
+            qty_disposed=d["qty_disposed"],
+            full_disposal=d["full_disposal"]
+        )
 
 
 @dataclass
@@ -286,14 +303,17 @@ class Encoder(json.JSONEncoder):
         if isinstance(obj, (Purchase, Disposal)):
             return obj.to_dict()
         elif isinstance(obj, dt.datetime):
-            return str(obj)
+            return obj.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         return super().default(obj)
 
 
 class Taxes:
-    def __init__(self, Exchanges: List[ExchangeTaxInfo] = [], UndisposedPurchases: List[Purchase] = [], years: List[int] = []):
+    def __init__(self, Exchanges: List[ExchangeTaxInfo] = [], UndisposedPurchases: List[Purchase] = [], years: List[int] = [], undisposed_purrchases_filename=""):
         self.exchanges = Exchanges
         self.txns = self.init_txns()
+        if undisposed_purrchases_filename:
+            UndisposedPurchases.extend(
+                self.load_undisposed_purchases_from_file(undisposed_purrchases_filename))
         if years:
             self.txns = self.filter_for_years(years)
         self.disposals = [
@@ -301,11 +321,29 @@ class Taxes:
         self.undisposed_purchases = [
             txn for txn in self.txns if isinstance(txn, Purchase)]
         self.undisposed_purchases.extend(UndisposedPurchases)
+        self.undisposed_purchases = self.filter_duplicate_purchases(self.undisposed_purchases)
         self.disposals = sorted(
             self.disposals, key=operator.attrgetter("date"))
         self.undisposed_purchases = sorted(
             self.undisposed_purchases, key=operator.attrgetter("date"))
         self.disposed_purchases = []
+
+    def load_undisposed_purchases_from_file(self, filename):
+        with open(filename) as f:
+            return [Purchase.from_dict(purchase) for purchase in json.load(f)]
+
+    def filter_duplicate_purchases(self, purchases: List[Purchase]) -> List[Purchase]:
+        unique_transactions = {}
+        for purchase in purchases:
+            key = (purchase.symbol, purchase.quantity, purchase.date, purchase.txn_id,
+                   purchase.exchange, purchase.cost_basis, purchase.price, purchase.fee)
+            if key not in unique_transactions:
+                unique_transactions[key] = purchase
+            else:
+                existing_purchase = unique_transactions[key]
+                if purchase.qty_disposed > existing_purchase.qty_disposed:
+                    unique_transactions[key] = purchase
+        return list(unique_transactions.values())
 
     def init_txns(self):
         txns = []
@@ -410,6 +448,7 @@ if __name__ == "__main__":
 
     # JTI = JsonTaxInfo("data/test_json_txns.json")
     # pprint(JTI.txns)
+
 
     RH = RobinhoodTaxInfo(RH_USERNAME, RH_PASSWORD, totp)
     STRIKE = StrikeTaxInfo("data/strike_annual_transactions_2022.csv")
