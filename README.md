@@ -204,3 +204,5 @@ Builds and runs the application in a docker container, keeping a volume at ./dat
     }
 ]
 ```
+
+*Further work may be done to integrate the APIs of other exchanges.*
