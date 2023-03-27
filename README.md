@@ -95,7 +95,7 @@ Builds and runs the application in a docker container, keeping a volume at ./dat
 
 2. ``./data/undisposed_purchases_yyyy_mm_dd.json``
 
-- This file contains data for all purchases that have not yet been associated with a sale. This information will be useful for the next tax year as it provides a clear snapshot of the current system state, and ensures that only purchases made in the subsequent tax year need to be added.
+   - This file contains data for all purchases that have not yet been associated with a sale. This information will be useful for the next tax year as it provides a clear snapshot of the current system state, and ensures that only purchases made in the subsequent tax year need to be added.
 
 ```json
 [
@@ -119,7 +119,7 @@ Builds and runs the application in a docker container, keeping a volume at ./dat
 
 1. `./data/disposed_purchases_yyyy_mm_dd.json`
 
-- This contains all reconciled purchases.
+   - This contains all reconciled purchases.
 
 ```json
 [
